@@ -7,6 +7,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float speed = 2;
     [SerializeField] private float jumpForce = 5;
     [SerializeField] private Transform forwardIndicator;
+    [SerializeField] float maxSpeed = 10f; // maximum speed
 
     private Rigidbody rb;
     private Camera mainCamera;
@@ -26,6 +27,11 @@ public class Player : MonoBehaviour
 
         transform.forward = cameraForward;
         transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
+
+    }
+
+    private void FixedUpdate() {
+
     }
 
     private void MovePlayer(Vector2 direction)
@@ -40,6 +46,11 @@ public class Player : MonoBehaviour
 
         Vector3 moveDirection = (right * direction.x + forward * direction.y).normalized;
         rb.AddForce(speed * moveDirection);
+
+        if (rb.linearVelocity.magnitude > maxSpeed)
+        {
+            rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
+        }
     }
 
     private int jumpCount = 0;
