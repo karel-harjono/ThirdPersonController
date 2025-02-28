@@ -11,7 +11,7 @@ public class Player : MonoBehaviour
     [SerializeField] float maxSpeed = 10f; // maximum speed
     
     // dashing params
-    private bool canDash = true;
+    private bool isDashing = false;
     [SerializeField] private float dashingPower = 24f;
     [SerializeField] private float dashingTime = 0.2f;
 
@@ -38,30 +38,45 @@ public class Player : MonoBehaviour
 
     private void MovePlayer(Vector2 direction)
     {
-        Vector3 forward = mainCamera.transform.forward;
-        Vector3 right = mainCamera.transform.right;
+        Transform camTransform = mainCamera.transform;
 
-        forward.y = 0;
+        Vector3 forward = camTransform.forward;
+        forward.y = 0; 
         forward.Normalize();
-        right.y = 0;
+
+        Vector3 right = camTransform.right;
+        right.y = 0; 
         right.Normalize();
 
-        Vector3 moveDirection = (right * direction.x + forward * direction.y).normalized;
-        rb.AddForce(speed * moveDirection);
+        Vector3 moveDirection = (forward * direction.y + right * direction.x).normalized;
 
-        if (rb.linearVelocity.magnitude > maxSpeed)
+        Vector3 horizontalVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+
+        if (horizontalVelocity.magnitude < maxSpeed)
         {
-            rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
+            rb.AddForce(speed * moveDirection, ForceMode.Acceleration);
+        } else {
+            Vector3 velocityDir = horizontalVelocity.normalized;
+            float alignment = Vector3.Dot(velocityDir, moveDirection);
+
+            if (alignment < 0.99f)
+            {
+                Vector3 steeringForce = (moveDirection - velocityDir) * speed;
+                rb.AddForce(steeringForce, ForceMode.Acceleration);
+            }
         }
     }
 
     private int jumpCount = 0;
     private const int maxJumpCount = 2;
 
+    private bool isJumping = false;
+
     private void Jump()
     {
         if (rb != null && jumpCount < maxJumpCount)
         {
+            isJumping = true;
             rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             jumpCount++;
@@ -69,15 +84,15 @@ public class Player : MonoBehaviour
     }
 
     private IEnumerator Dash() {
-        if (!canDash) yield break;
-        canDash = false;
+        if (isDashing) yield break;
+        isDashing = true;
         bool originalGravity = rb.useGravity;
         rb.useGravity = false;
         Vector3 dashDirection = mainCamera.transform.forward.normalized;
         rb.AddForce(dashDirection * dashingPower, ForceMode.Impulse);
         yield return new WaitForSeconds(dashingTime);
         rb.useGravity = originalGravity;
-        canDash = true;
+        isDashing = false;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -85,6 +100,7 @@ public class Player : MonoBehaviour
         if (collision.gameObject.CompareTag("Ground"))
         {
             jumpCount = 0;
+            isJumping = false;
         }
     }
 }
