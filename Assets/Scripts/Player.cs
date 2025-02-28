@@ -12,7 +12,6 @@ public class Player : MonoBehaviour
     
     // dashing params
     private bool canDash = true;
-    private bool isDashing = false;
     [SerializeField] private float dashingPower = 24f;
     [SerializeField] private float dashingTime = 0.2f;
 
@@ -72,15 +71,12 @@ public class Player : MonoBehaviour
     private IEnumerator Dash() {
         if (!canDash) yield break;
         canDash = false;
-        isDashing = true;
         bool originalGravity = rb.useGravity;
         rb.useGravity = false;
-        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
         Vector3 dashDirection = mainCamera.transform.forward.normalized;
         rb.AddForce(dashDirection * dashingPower, ForceMode.Impulse);
         yield return new WaitForSeconds(dashingTime);
         rb.useGravity = originalGravity;
-        isDashing = false;
         canDash = true;
     }
 

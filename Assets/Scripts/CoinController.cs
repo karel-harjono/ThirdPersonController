@@ -5,7 +5,6 @@ public class CoinController : MonoBehaviour
 {
     public float spinSpeed = 100f;
     public Text scoreText;
-    private int score = 0;
 
     private GameManager gameManager;
 
