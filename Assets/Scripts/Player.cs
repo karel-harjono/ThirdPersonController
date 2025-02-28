@@ -1,5 +1,6 @@
 using Unity.Cinemachine;
 using UnityEngine;
+using System.Collections;
 
 public class Player : MonoBehaviour
 {
@@ -8,6 +9,12 @@ public class Player : MonoBehaviour
     [SerializeField] private float jumpForce = 5;
     [SerializeField] private Transform forwardIndicator;
     [SerializeField] float maxSpeed = 10f; // maximum speed
+    
+    // dashing params
+    private bool canDash = true;
+    private bool isDashing = false;
+    [SerializeField] private float dashingPower = 24f;
+    [SerializeField] private float dashingTime = 0.2f;
 
     private Rigidbody rb;
     private Camera mainCamera;
@@ -16,6 +23,7 @@ public class Player : MonoBehaviour
     {
         inputManager.OnMove.AddListener(MovePlayer);
         inputManager.OnSpacePressed.AddListener(Jump);
+        inputManager.OnDashPressed.AddListener(() => StartCoroutine(Dash()));
         rb = GetComponent<Rigidbody>();
         mainCamera = Camera.main;
     }
@@ -27,11 +35,6 @@ public class Player : MonoBehaviour
 
         transform.forward = cameraForward;
         transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
-
-    }
-
-    private void FixedUpdate() {
-
     }
 
     private void MovePlayer(Vector2 direction)
@@ -64,6 +67,21 @@ public class Player : MonoBehaviour
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             jumpCount++;
         }
+    }
+
+    private IEnumerator Dash() {
+        if (!canDash) yield break;
+        canDash = false;
+        isDashing = true;
+        bool originalGravity = rb.useGravity;
+        rb.useGravity = false;
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+        Vector3 dashDirection = mainCamera.transform.forward.normalized;
+        rb.AddForce(dashDirection * dashingPower, ForceMode.Impulse);
+        yield return new WaitForSeconds(dashingTime);
+        rb.useGravity = originalGravity;
+        isDashing = false;
+        canDash = true;
     }
 
     private void OnCollisionEnter(Collision collision)
